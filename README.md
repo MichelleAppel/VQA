@@ -19,3 +19,4 @@ As a final product, you will be asked to write a report with your findings, whic
 * [Simple Baseline for Visual Question Answering](https://arxiv.org/pdf/1512.02167.pdf)
 * [The Unreasonable Effectiveness of Recurrent Neural Networks](http://karpathy.github.io/2015/05/21/rnn-effectiveness/)
 * [Understanding LSTM Networks](http://colah.github.io/posts/2015-08-Understanding-LSTMs/)
+* [PyTorch Tutorials](https://github.com/yunjey/pytorch-tutorial)
