@@ -60,7 +60,8 @@ img_feat = img_features[h5_id]
 ```
 
 ### Get Images
-While for training your models you can handle the image features as a black box, for testing and anlysis you want to have a look at the actual image. The VQA dataset utilizes the 2014 version of [MSCOCO](http://cocodataset.org/). Many tasks like Image Captioning or Object Detection are using this dataset, so it might me worthwhile to download it. However, it is quite big (13GB train, 6GB validation, 6GB test). Therefore, we are providing a second option. The MSCOCO annotations also come with a flickr url where the image can be found online (and more image information). The file `imgid2imginfo.json` contains all these information for the coco dataset. The file can be utilized as follows:
+While for training your models you can handle the image features as a black box, for testing and anlysis you want to have a look at the actual image. The VQA dataset utilizes the 2014 version of [MSCOCO](http://cocodataset.org/). Many tasks like Image Captioning or Object Detection are using this dataset, so it might me worthwhile to download it. However, it is quite big (13GB train, 6GB validation, 6GB test). For this project you will only need the training dataset, since all datapoints are from this split. The image can be retrieved via the file name. The image id is equal the last digits of the image file name. 
+Besides downloading the dataset, we are providing a second option. The MSCOCO annotations come with a flickr url where the images can be found online. The file `imgid2imginfo.json` contains the flickr url (and more image information) for the MSCOCO training and validation dataset. The file can be utilized as follows:
 
 ```python
 import json
