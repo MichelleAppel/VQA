@@ -1,6 +1,6 @@
 # Data
 ## Question / Annotation Data
-This folder contains the subset of the VQA dataset. In total there are 60k Q/A pairs provided. Details about how the data was created can be found in the folling [iPython Notebook](https://github.com/timbmg/NLP1-2017-VQA/blob/master/VQA%20Dataset%20Structure.ipynb). The data splits have the following sizes:
+This folder contains the subset of the VQA dataset. In total there are 60k Q/A pairs provided. Details about how the data was created can be found in the following [iPython Notebook](https://github.com/timbmg/NLP1-2017-VQA/blob/master/VQA%20Dataset%20Structure.ipynb). The data splits have the following sizes:
 * Training Set: 48061
 * Validation Set: 8977
 * Test Set Size: 2962
