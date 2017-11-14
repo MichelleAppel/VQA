@@ -28,6 +28,8 @@ The Annotation data has the following structure:
   - question_id
   - split
 ```
+When the VQA dataset was created, every Question has been asked to 10 different people. The answers and their confidence in the answer can be found in the `answers` of the annotation data. The 'gold' answer (i.e. the answer to predict), is found under the `multiple_choice_answer` key.
+
 ## Image Features
 The image features (ResNet) can be downloaded here: https://aashishv.stackstorage.com/s/MvvB4IQNk9QlydI
 
