@@ -22,3 +22,4 @@ As a final product, you will be asked to write a report with your findings, whic
 * [Understanding LSTM Networks](http://colah.github.io/posts/2015-08-Understanding-LSTMs/)
 * [PyTorch Tutorials](https://github.com/yunjey/pytorch-tutorial)
 * [PyTorch Data Loading Tutorial](http://pytorch.org/tutorials/beginner/data_loading_tutorial.html)
+* [Try out an implemented VQA model here!](https://vqa.cloudcv.org/)
