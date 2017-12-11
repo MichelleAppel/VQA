@@ -20,11 +20,11 @@ torch.manual_seed(RNDM_SEED) # set random seed for continuity
 q_train, q_valid, q_test, a_train, a_valid, a_test = read_textual_data()
 
 train_data = []
-for i in range(len(q_train)):
+for i in range(10000):
     train_data.append((q_train[i].split(), a_train[i]))
 
 test_data = []
-for i in range(len(q_test)):
+for i in range(10):
     test_data.append((q_test[i].split(), a_test[i]))
 
 """
@@ -151,7 +151,7 @@ for instance, label in test_data:
     index = index.data[0]
     prediction = target_vocabulary_lookup[index]
     
-    _, label = test_data[index]
+    # _, label = test_data[index]
     
     #TODO take the highest X probabilities to get the best X predictions (instead of 1)
     
@@ -159,11 +159,12 @@ for instance, label in test_data:
         print("hell yes")
     
     print("INSTANCE:", instance)
-    print("BOW VEC:", bow_vec)
-    print("LOG PROBS:", log_probs)
-    print("MAX VALUE:", value)
-    print("INDEX:", index)
-    print("BEST LABEL:", prediction) 
-    print("\n\n")
+    # print("BOW VEC:", bow_vec)
+    # print("LOG PROBS:", log_probs)
+    # print("MAX VALUE:", value)
+    # print("INDEX:", index)
+    print("BEST LABEL:", prediction)
+    print("ACTUAL: ", label) 
+    print("")
     if counter == 10:
         break
