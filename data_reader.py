@@ -43,17 +43,17 @@ def read_image_data():
 
 def read_textual_data():
     with open(PATH_TO_Q_TRAIN, 'r') as f:
-        questions_train = [x['question'] for x in json.load(f)['questions']]
+        questions_train = [[x['question'], x['image_id']] for x in json.load(f)['questions']]
     with open(PATH_TO_Q_VALID, 'r') as f:
-        questions_valid = [x['question'] for x in json.load(f)['questions']]
+        questions_valid = [[x['question'], x['image_id']] for x in json.load(f)['questions']]
     with open(PATH_TO_Q_TEST, 'r') as f:
-        questions_test = [x['question'] for x in json.load(f)['questions']]
+        questions_test = [[x['question'], x['image_id']] for x in json.load(f)['questions']]
     with open(PATH_TO_A_TRAIN, 'r') as f:
         annotations_train = [x['multiple_choice_answer'] for x in json.load(f)['annotations']]
     with open(PATH_TO_A_VALID, 'r') as f:
         annotations_valid = [x['multiple_choice_answer'] for x in json.load(f)['annotations']]
     with open(PATH_TO_A_TEST, 'r') as f:
-        annotations_test = [x['multiple_choice_answer'] for x in json.load(f)['annotations']]
+        annotations_test = [x['multiple_choice_answer']  for x in json.load(f)['annotations']]
     
     return questions_train, questions_valid, questions_test, annotations_train, annotations_valid, annotations_test
 
