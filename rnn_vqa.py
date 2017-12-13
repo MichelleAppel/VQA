@@ -1,11 +1,89 @@
-from showme import show_image
-from data_reader import read_image_data, read_textual_data
+#http://pytorch.org/tutorials/intermediate/char_rnn_classification_tutorial.html
 
-import h5py
-import numpy as np
-import torch.nn as nn
+import torch
+import torch.autograd as autograd
 from torch.autograd import Variable
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+import numpy as np
+from data_reader import read_textual_data, read_image_data
+from showme import show_image
+#import h5py
 
+# define hyperparameters
+NUM_EPOCHS = 5
+LEARNING_RATE = 0.1
+RNDM_SEED = 42
+N_HIDDEN = 128
+torch.manual_seed(RNDM_SEED) # set random seed for continuity
+
+# map img_id to list of visual features corresponding to that image
+def img_id_to_features(img_id):
+    h5_id = visual_feat_mapping[str(img_id)]
+    return img_features[h5_id]
+
+# read in textual (question-answer) data
+q_train, q_valid, q_test, a_train, a_valid, a_test = read_textual_data()
+
+# read in visual feature data
+img_ids, img_features, visual_feat_mapping, imgid2info = read_image_data()
+
+
+# determine train data
+train_data = []
+train_visual_features = []
+for i in range(100): # number of instances of train data (10.000 with 3 epochs took 2 hours on my laptop)
+    train_data.append((q_train[i][0].split(), a_train[i]))
+    train_visual_features.append(img_id_to_features(q_train[i][1]))
+
+# determine validation data
+valid_data = []
+valid_visual_features = []
+for i in range(10): # number of instances of test data
+    valid_data.append((q_valid[i][0].split(), a_valid[i]))
+    valid_visual_features.append(img_id_to_features(q_valid[i][1]))
+
+# determine test data
+test_data = []
+test_visual_features = []
+for i in range(10): # number of instances of test data
+    test_data.append((q_test[i][0].split(), a_test[i]))
+    test_visual_features.append(img_id_to_features(q_test[i][1]))
+
+
+# create source_vocabulary and target_vocabulary
+# source_vocabulary maps each word in the vocab to a unique integer, 
+# which will be its index into the Bag of Words vector
+source_vocabulary = {}
+target_vocabulary = {}
+target_vocabulary_lookup = []
+for sent, label in train_data + test_data:
+    for word in sent:
+        if word not in source_vocabulary:
+            source_vocabulary[word] = len(source_vocabulary)
+    if label not in target_vocabulary:
+        target_vocabulary[label] = len(target_vocabulary)
+        target_vocabulary_lookup.append(label)
+#print("Source vocabulary:", source_vocabulary)
+#print("Target vocabulary:",target_vocabulary)
+
+# calculate size of both vocabularies
+VOCAB_SIZE = len(source_vocabulary) # amount of unique words in questions
+NUM_LABELS = len(target_vocabulary) # amount of unique words in answers 
+print('Source vocabulary size:', VOCAB_SIZE, '  ', len(source_vocabulary))
+print('Target vocabulary size:', NUM_LABELS, '    ', len(target_vocabulary))
+
+
+
+###########################################################
+###################### RNN MODEL ##########################
+###########################################################
+
+#TODO   TEST WHETHER THIS IS EASIER TO IMPLEMENT:
+#       rnn = torch.nn.LSTM(input_size=4, hidden_size=3, batch_first=True)
+
+# define a class for the RNN model
 class RNN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(RNN, self).__init__()
@@ -28,62 +106,9 @@ class RNN(nn.Module):
     def init_hidden(self):
         return Variable(torch.zeros(1, self.hidden_size))
 
-torch.manual_seed(RNDM_SEED) # set random seed for continuity
 
-# STEP 1: read in data
-img_ids, img_feat, feat_mapping, img_info = read_image_data()
-q_train, q_valid, q_test, a_train, a_valid, a_test = read_textual_data()
-
-train_data = []
-for i in range(1000):
-    train_data.append((q_train[i].split(), a_train[i]))
-
-test_data = []
-for i in range(10):
-    test_data.append((q_test[i].split(), a_test[i]))
-
-"""
-train_data = [
-    ('What English meal is this likely for?'.split(), 'tea'),
-    ('What insurance company is a sponsor?'.split(), 'state farm'),
-    ('Is there a bell on the train?'.split(), 'yes')
-]
-
-test_data = [
-    ('What English meal is this likely for?'.split(), 'tea'),
-    ('What insurance company is a sponsor?'.split(), 'state farm'),
-    ('Is there a bell on the train?'.split(), 'yes')
-]
-"""
-
-# STEP 2: create source_vocabulary and target_vocabulary
-
-# source_vocabulary maps each word in the vocab to a unique integer, which will be its
-# index into the Bag of words vector
-source_vocabulary = {}
-target_vocabulary = {}
-target_vocabulary_lookup = []
-for sent, label in train_data + test_data:
-    for word in sent:
-        if word not in source_vocabulary:
-            source_vocabulary[word] = len(source_vocabulary)
-    if label not in target_vocabulary:
-        target_vocabulary[label] = len(target_vocabulary)
-        target_vocabulary_lookup.append(label)
-#print("Source vocabulary:", source_vocabulary)
-#print("Target vocabulary:",target_vocabulary)
-
-# calculate size of both vocabularies
-VOCAB_SIZE = len(source_vocabulary)+len(train_visual_features[0]) # amount of distinct words (input)
-NUM_LABELS = len(target_vocabulary) # amount of distinct labels (output)
-print('Source vocabulary size:', VOCAB_SIZE, '  ', len(source_vocabulary), 'from source_vocab and', len(train_visual_features[0]), 'from visual features')
-print('Target vocabulary size:', NUM_LABELS, '    ', len(target_vocabulary), 'from target_vocab')
-
-
-
-n_hidden = 128
-rnn = RNN(VOCAB_SIZE, n_hidden, NUM_LABELS)
-
+rnn = RNN(VOCAB_SIZE, N_HIDDEN, NUM_LABELS)
+print(rnn)
 
 # idt = img_ids[15]
 # idh = feat_mapping[str(idt)]
