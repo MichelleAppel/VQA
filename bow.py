@@ -9,7 +9,7 @@ import numpy as np
 from data_reader import read_textual_data, read_image_data
 
 # STEP 0: define hyperparameters
-NUM_EPOCHS = 3
+NUM_EPOCHS = 5
 LEARNING_RATE = 0.1
 RNDM_SEED = 42
 torch.manual_seed(RNDM_SEED) # set random seed for continuity
@@ -25,7 +25,7 @@ img_ids, img_features, visual_feat_mapping, imgid2info = read_image_data()
 
 train_data = []
 train_visual_features = []
-for i in range(500): # number of instances of train data
+for i in range(100): # number of instances of train data (10.000 with 3 epochs took 2 hours on my laptop)
     train_data.append((q_train[i][0].split(), a_train[i]))
     train_visual_features.append(img_id_to_features(q_train[i][1]))
         
@@ -112,58 +112,67 @@ loss_function = nn.NLLLoss()
 optimizer = optim.SGD(bow_model.parameters(), lr=LEARNING_RATE)
 
 
-# train (= update parameters) for NUM_EPOCHS epochs
+
 #TODO improve training by including k-fold cross validation?
-for epoch in range(NUM_EPOCHS):
-    j = 0
-    print("EPOCH:", epoch, " / ", NUM_EPOCHS)
-    for (instance, label), visual_features in zip(train_data, train_visual_features):
-        if j % 10 == 0:
-            print(j, "/", len(train_data))
+# train the model on train_data for NUM_EPOCHS epochs
+def train_bow():
+    for epoch in range(NUM_EPOCHS):
+        print("EPOCH:", epoch, " / ", NUM_EPOCHS)
+        instance_counter = 0
+        for (instance, label), visual_features in zip(train_data, train_visual_features):
+            if instance_counter % 1000 == 0:
+                print(instance_counter, "/", len(train_data))
         
-        # clear previous gradients
-        bow_model.zero_grad()
+            # clear previous gradients
+            bow_model.zero_grad()
 
-        # create BoW vector (features) and append visual features
-        bow_vec = autograd.Variable(make_bow_vector(instance, source_vocabulary, visual_features))
+            # create BoW vector (textual features) including appended visual features
+            bow_vec = autograd.Variable(make_bow_vector(instance, source_vocabulary, visual_features))
             
-        # create target (label)
-        target = autograd.Variable(make_target(label, target_vocabulary))
+            # create target (label)
+            target = autograd.Variable(make_target(label, target_vocabulary))
                 
-        # run forward pass: compute log probabilities and loss
-        log_probs = bow_model(bow_vec)        
-        loss = loss_function(log_probs, target)
+            # run forward pass: compute log probabilities and loss
+            log_probs = bow_model(bow_vec)        
+            loss = loss_function(log_probs, target)
 
-        # run backward pass: compute gradients and update parameters with optimizer.step()
-        loss.backward()
-        optimizer.step()
+            # run backward pass: compute gradients and update parameters with optimizer.step()
+            loss.backward()
+            optimizer.step()
                 
-        j += 1
+            instance_counter += 1
+            
+        # after each epoch, save the model
+        torch.save(bow_model, 'trained_bow_model_ep'+str(epoch)+'.pt')
+        
+        # after each epoch, calculate the accuracy of the model
+        accuracy = calc_accuracy(bow_model, test_data, test_visual_features)
+        print("The accuracy of epoch ", epoch, " is: ", accuracy, "%")
 
-counter = 0 
-#TODO calculate accuracy on test_data
-for (instance, label), visual_features in zip(test_data, test_visual_features):
-    counter += 1
-    bow_vec = autograd.Variable(make_bow_vector(instance, source_vocabulary, visual_features))
-    log_probs = bow_model(bow_vec)
-    value, index = torch.max(log_probs, 1)
-    index = index.data[0]
-    prediction = target_vocabulary_lookup[index]
+
+#TODO take the highest X probabilities to get the best X predictions (instead of 1)
+# calculates the accuracy of predictions in given dataset
+def calc_accuracy(model, data, visual_features): # data = validation_data or test_data
+    counter = 0
+    for (question, correct_answer), vis_features in zip(data, visual_features):
+        bow_vec = autograd.Variable(make_bow_vector(question, source_vocabulary, vis_features))
+        log_probs = model(bow_vec)
+        value, index = torch.max(log_probs, 1)
+        index = index.data[0]
+        predicted_answer = target_vocabulary_lookup[index]
+        #_, label = data[index]
+         
+        if predicted_answer == correct_answer:
+            counter += 1
+        #print("QUESTION:       ", question)
+        #print("PREDICTION:     ", predicted_answer)
+        #print("CORRECT ANSWER: ", correct_answer) 
+        #print("")
+        
+    accuracy = (float(counter) / len(data)) * 100
+    return accuracy
+
+
+if __name__ == "__main__":
+    train_bow()
     
-    # _, label = test_data[index]
-    
-    #TODO take the highest X probabilities to get the best X predictions (instead of 1)
-    
-    if prediction == label:
-        print("hell yes")
-    
-    print("INSTANCE:", instance)
-    # print("BOW VEC:", bow_vec)
-    # print("LOG PROBS:", log_probs)
-    # print("MAX VALUE:", value)
-    # print("INDEX:", index)
-    print("BEST LABEL:", prediction)
-    print("ACTUAL: ", label) 
-    print("")
-    if counter == 10:
-        break
