@@ -11,7 +11,7 @@ from data_reader import read_textual_data, read_image_data
 from showme import show_image
 
 # define hyperparameters
-NUM_EPOCHS = 50
+NUM_EPOCHS = 10
 LEARNING_RATE = 0.01
 RNDM_SEED = 42
 N_HIDDEN = 300
@@ -107,21 +107,24 @@ source_vocabulary, target_vocabulary, target_vocabulary_lookup = vocabulary()
 
 # calculate size of both vocabularies
 VOCAB_SIZE = len(source_vocabulary) # amount of unique words in questions
-NUM_LABELS = len(target_vocabulary) # amount of unique words in answers 
+NUM_LABELS = len(target_vocabulary) # amount of unique words in answers
+IMG_FEAT_SIZE = len(train_visual[0])
 
 print(VOCAB_SIZE)
 
 #print('Source vocabulary size:', VOCAB_SIZE, '  ', len(source_vocabulary))
 #print('Target vocabulary size:', NUM_LABELS, '    ', len(target_vocabulary))
 
-def get_training_pair(sentence, label, source_vocabulary, target_vocabulary):
-    return Variable(make_input_tensor(sentence, source_vocabulary)), \
+def get_training_pair(sentence, label, source_vocabulary, target_vocabulary, visual_features):
+    return Variable(make_input_tensor(sentence, source_vocabulary, visual_features)), \
     Variable(make_target_tensor(label, target_vocabulary))
 
-def make_input_tensor(sentence, source_vocabulary): 
-    vec = torch.zeros(len(sentence), 1, len(source_vocabulary))
+def make_input_tensor(sentence, source_vocabulary, visual_features): 
+    vec = torch.zeros(len(sentence), 1, len(source_vocabulary) + len(visual_features))
     for i, word in enumerate(sentence):
         vec[i][0][source_vocabulary[word]] += 1
+    for i in range(len(visual_features)):
+        vec[i+len(source_vocabulary)] += visual_features[i]
     return vec
 
 def make_target_tensor(label, target_vocabulary):
@@ -158,7 +161,7 @@ class RNN(nn.Module):
         return Variable(torch.zeros(1, self.hidden_size))
 
 # initialize a RNN model
-rnn = RNN(VOCAB_SIZE, N_HIDDEN, NUM_LABELS)
+rnn = RNN(VOCAB_SIZE + IMG_FEAT_SIZE, N_HIDDEN, NUM_LABELS)
 #print(rnn)
 
 # intialize loss function (= Negative Log Likelihood Loss)
@@ -208,7 +211,7 @@ def train_rnn():
         counter = 0
         for (question, answer), visual_features in zip(train_data, train_visual_features):
             question_tensor, target_tensor = get_training_pair(question, answer, \
-                source_vocabulary, target_vocabulary)
+                source_vocabulary, target_vocabulary, visual_features)
 
             output, loss = train(target_tensor, question_tensor)
             current_loss += loss
@@ -240,7 +243,7 @@ def train_rnn():
 def calc_accuracy(model, data, visual_features):
     counter = 0
     for (question, correct_answer), vis_features in zip(data, visual_features):
-        input_tensor = Variable(make_input_tensor(question, source_vocabulary))
+        input_tensor = Variable(make_input_tensor(question, source_vocabulary, vis_features))
         hidden = model.init_hidden()
         #hidden = Variable(torch.zeros(1, N_HIDDEN))
         for i in range(input_tensor.size()[0]):

@@ -12,9 +12,9 @@ from showme import show_image
 
 # define hyperparameters
 NUM_EPOCHS = 5
-LEARNING_RATE = 0.1     # NILS      0.1
+# LEARNING_RATE = 0.1     # NILS      0.1
 #LEARNING_RATE = 0.01    # MICHELLE  0.01
-#LEARNING_RATE = 0.001   # YVES      0.001
+LEARNING_RATE = 0.001   # YVES      0.001
 RNDM_SEED = 42
 torch.manual_seed(RNDM_SEED) # set random seed for continuity
 
@@ -34,13 +34,13 @@ VALID_LEN = len(q_valid)
 TEST_LEN =  len(q_test)
 
 def sentence_length_index_count():
-	sentence_length_index = [0] * 22
-	target_length_index = [0] * 3
-	for (sentence, target) in train_data+valid_data+test_data:
-		sentence_length_index[len(sentence)] += 1
-		target_length_index[len([target])] += 1
-	print("Sentences ", sentence_length_index)
-	print("Targets   ", target_length_index)
+    sentence_length_index = [0] * 22
+    target_length_index = [0] * 3
+    for (sentence, target) in train_data+valid_data+test_data:
+        sentence_length_index[len(sentence)] += 1
+        target_length_index[len([target])] += 1
+    print("Sentences ", sentence_length_index)
+    print("Targets   ", target_length_index)
     
     
 def train_valid_test_data():
@@ -68,9 +68,9 @@ def train_valid_test_data():
     return train_data, train_visual, valid_data, valid_visual, test_data, test_visual
 
 def shuffle_data(text_features, visual_features):
-	combined = [(text, visual) for text, visual in zip(text_features, visual_features)]
-	random.shuffle(combined)
-	return [text for (text, _) in combined], [visual for (_, visual) in combined]
+    combined = [(text, visual) for text, visual in zip(text_features, visual_features)]
+    random.shuffle(combined)
+    return [text for (text, _) in combined], [visual for (_, visual) in combined]
 
 
 
@@ -160,8 +160,8 @@ def train_bow():
     
     for iter in range(1, NUM_EPOCHS+1):
         print("EPOCH:", iter, " / ", NUM_EPOCHS)
-        counter = 0
-        for (instance, label), visual_features in zip(train_data, train_visual):
+        counter = 1
+        for (instance, label), visual_features in zip(*shuffle_data(train_data, train_visual)):
             if counter % 1000 == 0:
                 print(counter, "/", len(train_data))
             counter += 1
