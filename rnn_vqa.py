@@ -14,15 +14,15 @@ from showme import show_image
 NUM_EPOCHS = 50
 LEARNING_RATE = 0.01
 RNDM_SEED = 42
-N_HIDDEN = 12
+N_HIDDEN = 300
 MIN_SEN_LEN = 2
-MAX_SEN_LEN = 13
+MAX_SEN_LEN = 20
 torch.manual_seed(RNDM_SEED) # set random seed for continuity
 
 # map img_id to list of visual features corresponding to that image
 def img_id_to_features(img_id):
-	h5_id = visual_feat_mapping[str(img_id)]
-	return img_features[h5_id]
+    h5_id = visual_feat_mapping[str(img_id)]
+    return img_features[h5_id]
 
 # read in textual (question-answer) data
 q_train, q_valid, q_test, a_train, a_valid, a_test = read_textual_data()
@@ -30,73 +30,73 @@ q_train, q_valid, q_test, a_train, a_valid, a_test = read_textual_data()
 # read in visual feature data
 img_ids, img_features, visual_feat_mapping, imgid2info = read_image_data()
 
-TRAIN_LEN = 500 #len(q_train)
+TRAIN_LEN = 50 #len(q_train)
 VALID_LEN = 1 #len(q_valid)
-TEST_LEN =  1000 #len(q_test)
+TEST_LEN =  10 #len(q_test)
 
 def sentence_length_index_count():
-	sentence_length_index = [0] * 22
-	target_length_index = [0] * 3
+    sentence_length_index = [0] * 22
+    target_length_index = [0] * 3
 
-	for (sentence, target) in train_data+valid_data+test_data:
-		sentence_length_index[len(sentence)] += 1
-		target_length_index[len([target])] += 1
+    for (sentence, target) in train_data+valid_data+test_data:
+        sentence_length_index[len(sentence)] += 1
+        target_length_index[len([target])] += 1
 
-	print("Sentences ", sentence_length_index)
-	print("Targets   ", target_length_index)
+    print("Sentences ", sentence_length_index)
+    print("Targets   ", target_length_index)
 
 def train_valid_test_data():
 # determine train data
-	train_data = []
-	train_visual_features = []
-	for i in range(TRAIN_LEN): # number of instances of train data (10.000 with 3 epochs took 2 hours on my laptop)
-		sentence = q_train[i][0].split()
-		if len(sentence) > MIN_SEN_LEN and len(sentence) < MAX_SEN_LEN:
-			train_data.append((sentence, a_train[i]))
-			train_visual_features.append(img_id_to_features(q_train[i][1]))
+    train_data = []
+    train_visual_features = []
+    for i in range(TRAIN_LEN): # number of instances of train data (10.000 with 3 epochs took 2 hours on my laptop)
+        sentence = q_train[i][0].split()
+        if len(sentence) > MIN_SEN_LEN and len(sentence) < MAX_SEN_LEN:
+            train_data.append((sentence, a_train[i]))
+            train_visual_features.append(img_id_to_features(q_train[i][1]))
 
-	# determine validation data
-	valid_data = []
-	valid_visual_features = []
-	for i in range(VALID_LEN): # number of instances of test data
-		sentence = q_valid[i][0].split()
-		if len(sentence) > MIN_SEN_LEN and len(sentence) < MAX_SEN_LEN:
-			valid_data.append((sentence, a_valid[i]))
-			valid_visual_features.append(img_id_to_features(q_valid[i][1]))
+    # determine validation data
+    valid_data = []
+    valid_visual_features = []
+    for i in range(VALID_LEN): # number of instances of test data
+        sentence = q_valid[i][0].split()
+        if len(sentence) > MIN_SEN_LEN and len(sentence) < MAX_SEN_LEN:
+            valid_data.append((sentence, a_valid[i]))
+            valid_visual_features.append(img_id_to_features(q_valid[i][1]))
 
-	# determine test data
-	test_data = []
-	test_visual_features = []
-	for i in range(TEST_LEN): # number of instances of test data
-		sentence = q_test[i][0].split()
-		if len(sentence) > MIN_SEN_LEN and len(sentence) < MAX_SEN_LEN:
-			test_data.append((sentence, a_test[i]))
-			test_visual_features.append(img_id_to_features(q_test[i][1]))
+    # determine test data
+    test_data = []
+    test_visual_features = []
+    for i in range(TEST_LEN): # number of instances of test data
+        sentence = q_test[i][0].split()
+        if len(sentence) > MIN_SEN_LEN and len(sentence) < MAX_SEN_LEN:
+            test_data.append((sentence, a_test[i]))
+            test_visual_features.append(img_id_to_features(q_test[i][1]))
 
-	return train_data, train_visual_features, valid_data, valid_visual_features, test_data, test_visual_features
+    return train_data, train_visual_features, valid_data, valid_visual_features, test_data, test_visual_features
 
 def shuffle_data(text_features, visual_features):
-	combined = [(text, visual) for text, visual in zip(text_features, visual_features)]
-	random.shuffle(combined)
-	return [text for (text, _) in combined], [visual for (_, visual) in combined]
+    combined = [(text, visual) for text, visual in zip(text_features, visual_features)]
+    random.shuffle(combined)
+    return [text for (text, _) in combined], [visual for (_, visual) in combined]
     
 # create source_vocabulary and target_vocabulary
 # source_vocabulary maps each word in the vocab to a unique integer, 
 # which will be its index into the Bag of Words vector
 def vocabulary():
-	source_vocabulary = {}
-	target_vocabulary = {}
-	target_vocabulary_lookup = []
-	for sent, label in train_data + test_data:
-		for word in sent:
-			if word not in source_vocabulary:
-				source_vocabulary[word] = len(source_vocabulary)
-		if label not in target_vocabulary:
-			target_vocabulary[label] = len(target_vocabulary)
-			target_vocabulary_lookup.append(label)
+    source_vocabulary = {}
+    target_vocabulary = {}
+    target_vocabulary_lookup = []
+    for sent, label in train_data + test_data:
+        for word in sent:
+            if word not in source_vocabulary:
+                source_vocabulary[word] = len(source_vocabulary)
+        if label not in target_vocabulary:
+            target_vocabulary[label] = len(target_vocabulary)
+            target_vocabulary_lookup.append(label)
 
-	source_vocabulary['<pad>'] = len(source_vocabulary)
-	return source_vocabulary, target_vocabulary, target_vocabulary_lookup
+    source_vocabulary['<pad>'] = len(source_vocabulary)
+    return source_vocabulary, target_vocabulary, target_vocabulary_lookup
 
 train_data, train_visual_features, valid_data, valid_visual_features, test_data, test_visual_features = train_valid_test_data()
 train_data, train_visual_features = shuffle_data(train_data, train_visual_features)
@@ -109,21 +109,23 @@ source_vocabulary, target_vocabulary, target_vocabulary_lookup = vocabulary()
 VOCAB_SIZE = len(source_vocabulary) # amount of unique words in questions
 NUM_LABELS = len(target_vocabulary) # amount of unique words in answers 
 
+print(VOCAB_SIZE)
+
 #print('Source vocabulary size:', VOCAB_SIZE, '  ', len(source_vocabulary))
 #print('Target vocabulary size:', NUM_LABELS, '    ', len(target_vocabulary))
 
+def get_training_pair(sentence, label, source_vocabulary, target_vocabulary):
+    return Variable(make_input_tensor(sentence, source_vocabulary)), \
+    Variable(make_target_tensor(label, target_vocabulary))
 
 def make_input_tensor(sentence, source_vocabulary): 
-	vec = torch.zeros(MAX_SEN_LEN, 1, len(source_vocabulary))
-	for i, word in enumerate(sentence):
-		vec[i][0][source_vocabulary[word]] += 1
-	if len(sentence) < MAX_SEN_LEN:
-		for i in range(len(sentence), MAX_SEN_LEN):
-			vec[i][0][source_vocabulary['<pad>']] += 1
-	return vec
+    vec = torch.zeros(len(sentence), 1, len(source_vocabulary))
+    for i, word in enumerate(sentence):
+        vec[i][0][source_vocabulary[word]] += 1
+    return vec
 
 def make_target_tensor(label, target_vocabulary):
-	return torch.LongTensor([target_vocabulary[label]])
+    return torch.LongTensor([target_vocabulary[label]])
 
 ###########################################################
 ###################### RNN MODEL ##########################
@@ -143,7 +145,7 @@ class RNN(nn.Module):
         
         self.i2h = nn.Linear(input_size + hidden_size, hidden_size)
         self.i2o = nn.Linear(input_size + hidden_size, output_size)
-        self.softmax = nn.LogSoftmax()
+        self.softmax = nn.LogSoftmax(dim=-1)
         
     def forward(self, input, hidden):
         combined = torch.cat((input, hidden), 1)
@@ -163,8 +165,7 @@ rnn = RNN(VOCAB_SIZE, N_HIDDEN, NUM_LABELS)
 loss_function = nn.NLLLoss()
 
 # intialize optimizer (= Stochastic Gradient Descent)
-#optimizer = optim.SGD(rnn.parameters(), lr=LEARNING_RATE)
-
+optimizer = optim.SGD(rnn.parameters(), lr=LEARNING_RATE)
 
 #rnn = nn.RNN(input_size=VOCAB_SIZE,
 #    hidden_size = N_HIDDEN,
@@ -181,6 +182,20 @@ dropout         –   If non-zero, introduces a dropout layer on the outputs of 
 bidirectional   –   If True, becomes a bidirectional RNN. Default: False
 '''
 
+def train(answer_tensor, question_tensor):
+    rnn.zero_grad()
+    hidden = rnn.init_hidden()
+    
+    for i in range(question_tensor.size()[0]):
+        output, hidden = rnn(question_tensor[i], hidden)
+
+    loss = loss_function(output, answer_tensor)
+    loss.backward()
+
+    optimizer.step()
+
+    return output, loss.data[0]
+
 #TODO improve this method
 def train_rnn():
     
@@ -192,25 +207,16 @@ def train_rnn():
         print("EPOCH:", iter, " / ", NUM_EPOCHS)
         counter = 0
         for (question, answer), visual_features in zip(train_data, train_visual_features):
+            question_tensor, target_tensor = get_training_pair(question, answer, \
+                source_vocabulary, target_vocabulary)
+
+            output, loss = train(target_tensor, question_tensor)
+            current_loss += loss
+            
             if counter % 100 == 0:
                 print(counter, "/", len(train_data))
             counter += 1
-    
-            hidden = rnn.init_hidden()
-            #hidden = Variable(torch.zeros(1, N_HIDDEN))
 
-            rnn.zero_grad()
-
-            question_tensor = autograd.Variable(make_input_tensor(question, source_vocabulary))
-            target_tensor = autograd.Variable(make_target_tensor(answer, target_vocabulary))
-            
-            for i in range(question_tensor.size()[0]):
-                output, hidden = rnn(question_tensor[i], hidden)
-
-            loss = loss_function(output, target_tensor)
-            loss.backward()
-            current_loss += loss
-            
             #print("LOSSSSSSSSS", loss.data[0])
             #print(output)
             #print(question)
@@ -218,28 +224,29 @@ def train_rnn():
             #print("\n\n\n\n\n\n")
 
             # Add parameters' gradients to their values, multiplied by learning rate
-            for p in rnn.parameters():
-                p.data.add_(-LEARNING_RATE, p.grad.data)
+            # for p in rnn.parameters():
+            #     p.data.add_(-LEARNING_RATE, p.grad.data)
                 
         # add current loss avg to list of losses
         all_losses.append(current_loss)
+        value, index = torch.max(output, 1)
         print("CURRENT LOSS", current_loss)
         current_loss = 0
             
-    return rnn, output, loss.data[0]
+    return rnn, output, loss
 
 
 
 def calc_accuracy(model, data, visual_features):
     counter = 0
     for (question, correct_answer), vis_features in zip(data, visual_features):
-        input_tensor = autograd.Variable(make_input_tensor(question, source_vocabulary))
+        input_tensor = Variable(make_input_tensor(question, source_vocabulary))
         hidden = model.init_hidden()
         #hidden = Variable(torch.zeros(1, N_HIDDEN))
         for i in range(input_tensor.size()[0]):
             output, hidden = model(input_tensor[i], hidden)
-        print("OUTPUT", output)
-        print("OUTPUTDATA", output.data)
+        # print("OUTPUT", output)
+        # print("OUTPUTDATA", output.data)
         value, index = torch.max(output, 1)
         index = index.data[0]
         predicted_answer = target_vocabulary_lookup[index]
@@ -277,7 +284,7 @@ if __name__ == "__main__":
     print()
     '''
     rnn, output, loss = train_rnn()
-    print(calc_accuracy(rnn, train_data, train_visual_features))
+    print(calc_accuracy(rnn, test_data, test_visual_features))
     
     
 
