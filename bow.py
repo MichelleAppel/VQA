@@ -29,21 +29,21 @@ img_ids, img_features, visual_feat_mapping, imgid2info = read_image_data()
 # determine train data
 train_data = []
 train_visual_features = []
-for i in range(100): # number of instances of train data (10.000 with 3 epochs took 2 hours on my laptop)
+for i in range(len(q_train)): # number of instances of train data (10.000 with 3 epochs took 2 hours on my laptop)
     train_data.append((q_train[i][0].split(), a_train[i]))
     train_visual_features.append(img_id_to_features(q_train[i][1]))
 
 # determine validation data
 valid_data = []
 valid_visual_features = []
-for i in range(10): # number of instances of test data
+for i in range(len(q_valid)): # number of instances of test data
     valid_data.append((q_valid[i][0].split(), a_valid[i]))
     valid_visual_features.append(img_id_to_features(q_valid[i][1]))
 
 # determine test data
 test_data = []
 test_visual_features = []
-for i in range(10): # number of instances of test data
+for i in range(len(q_test)): # number of instances of test data
     test_data.append((q_test[i][0].split(), a_test[i]))
     test_visual_features.append(img_id_to_features(q_test[i][1]))
 
@@ -122,12 +122,18 @@ optimizer = optim.SGD(bow_model.parameters(), lr=LEARNING_RATE)
 #TODO improve training by including k-fold cross validation?
 # train the model on train_data for NUM_EPOCHS epochs
 def train_bow():
-    for epoch in range(NUM_EPOCHS):
-        print("EPOCH:", epoch, " / ", NUM_EPOCHS)
-        instance_counter = 0
+    
+    # keep track of losses for plotting
+    current_loss = 0
+    all_losses = []
+    
+    for iter in range(1, NUM_EPOCHS+1):
+        print("EPOCH:", iter, " / ", NUM_EPOCHS)
+        counter = 0
         for (instance, label), visual_features in zip(train_data, train_visual_features):
-            if instance_counter % 1000 == 0:
-                print(instance_counter, "/", len(train_data))
+            if counter % 1000 == 0:
+                print(counter, "/", len(train_data))
+            counter += 1
         
             # clear previous gradients
             bow_model.zero_grad()
@@ -141,19 +147,24 @@ def train_bow():
             # run forward pass: compute log probabilities and loss
             log_probs = bow_model(bow_vec)        
             loss = loss_function(log_probs, target)
-
+            current_loss += loss
+            
             # run backward pass: compute gradients and update parameters with optimizer.step()
             loss.backward()
             optimizer.step()
-                
-            instance_counter += 1
+                            
+        # add current loss avg to list of losses
+        all_losses.append(current_loss / len(train_data))
+        current_loss = 0
             
         # after each epoch, save the model
-        torch.save(bow_model, 'trained_bow_model_ep'+str(epoch)+'.pt')
+        torch.save(bow_model, 'trained_bow_model_ep'+str(iter)+'.pt')
         
         # after each epoch, calculate the accuracy of the model on test_data
-        accuracy = calc_accuracy(bow_model, test_data, test_visual_features)
-        print("The accuracy of epoch ", epoch, " is: ", accuracy, "%")
+        accuracy = calc_accuracy(bow_model, valid_data, valid_visual_features)
+        print("The accuracy of epoch ", iter, " on valid data is: ", accuracy, "%")
+        
+    return bow_model, all_losses
 
 
 #TODO take the highest X probabilities to get the best X predictions (instead of 1)
@@ -170,15 +181,19 @@ def calc_accuracy(model, data, visual_features): # data = validation_data or tes
          
         if predicted_answer == correct_answer:
             counter += 1
-        #print("QUESTION:       ", question)
-        #print("PREDICTION:     ", predicted_answer)
-        #print("CORRECT ANSWER: ", correct_answer) 
-        #print("")
+            print("QUESTION:       ", question)
+            print("PREDICTION:     ", predicted_answer)
+            print("CORRECT ANSWER: ", correct_answer) 
+            print()
         
     accuracy = (float(counter) / len(data)) * 100
     return accuracy
 
 
 if __name__ == "__main__":
-    train_bow()
+    bow_model, all_losses = train_bow()
+    print("bow_model", bow_model)
+    print("all_losses", all_losses)
+    accuracy = calc_accuracy(bow_model, test_data, test_visual_features)
+    print("The accuracy on the test data is: ", accuracy, "%")
     
