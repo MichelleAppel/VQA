@@ -11,7 +11,7 @@ from data_reader import read_textual_data, read_image_data
 from showme import show_image
 
 # define hyperparameters
-NUM_EPOCHS = 10
+NUM_EPOCHS = 5
 LEARNING_RATE = 0.01
 RNDM_SEED = 42
 N_HIDDEN = 300
@@ -30,9 +30,9 @@ q_train, q_valid, q_test, a_train, a_valid, a_test = read_textual_data()
 # read in visual feature data
 img_ids, img_features, visual_feat_mapping, imgid2info = read_image_data()
 
-TRAIN_LEN = 50 #len(q_train)
-VALID_LEN = 1 #len(q_valid)
-TEST_LEN =  10 #len(q_test)
+TRAIN_LEN = 500 #len(q_train)
+VALID_LEN = 10 #len(q_valid)
+TEST_LEN =  50 #len(q_test)
 
 def sentence_length_index_count():
     sentence_length_index = [0] * 22
@@ -87,7 +87,7 @@ def vocabulary():
     source_vocabulary = {}
     target_vocabulary = {}
     target_vocabulary_lookup = []
-    for sent, label in train_data + test_data:
+    for sent, label in train_data + valid_data + test_data:
         for word in sent:
             if word not in source_vocabulary:
                 source_vocabulary[word] = len(source_vocabulary)
@@ -108,7 +108,7 @@ source_vocabulary, target_vocabulary, target_vocabulary_lookup = vocabulary()
 # calculate size of both vocabularies
 VOCAB_SIZE = len(source_vocabulary) # amount of unique words in questions
 NUM_LABELS = len(target_vocabulary) # amount of unique words in answers
-IMG_FEAT_SIZE = len(train_visual[0])
+IMG_FEAT_SIZE = len(train_visual_features[0])
 
 print(VOCAB_SIZE)
 
@@ -123,8 +123,8 @@ def make_input_tensor(sentence, source_vocabulary, visual_features):
     vec = torch.zeros(len(sentence), 1, len(source_vocabulary) + len(visual_features))
     for i, word in enumerate(sentence):
         vec[i][0][source_vocabulary[word]] += 1
-    for i in range(len(visual_features)):
-        vec[i+len(source_vocabulary)] += visual_features[i]
+        for j in range(len(visual_features)):
+            vec[i][0][j+len(source_vocabulary)] += visual_features[j]
     return vec
 
 def make_target_tensor(label, target_vocabulary):
@@ -208,15 +208,15 @@ def train_rnn():
     
     for iter in range(1, NUM_EPOCHS+1):
         print("EPOCH:", iter, " / ", NUM_EPOCHS)
-        counter = 0
-        for (question, answer), visual_features in zip(train_data, train_visual_features):
+        counter = 1
+        for (question, answer), visual_features in zip(*shuffle_data(train_data, train_visual_features)):
             question_tensor, target_tensor = get_training_pair(question, answer, \
                 source_vocabulary, target_vocabulary, visual_features)
 
             output, loss = train(target_tensor, question_tensor)
             current_loss += loss
             
-            if counter % 100 == 0:
+            if counter % 10 == 0:
                 print(counter, "/", len(train_data))
             counter += 1
 
@@ -234,6 +234,7 @@ def train_rnn():
         all_losses.append(current_loss)
         value, index = torch.max(output, 1)
         print("CURRENT LOSS", current_loss)
+        print("VALIDATION ACCURACY", calc_accuracy(rnn, valid_data, valid_visual_features))
         current_loss = 0
             
     return rnn, output, loss
@@ -256,10 +257,10 @@ def calc_accuracy(model, data, visual_features):
         #_, label = data[index]
         if predicted_answer == correct_answer:
             counter += 1
-        print("QUESTION:       ", question)
-        print("PREDICTION:     ", predicted_answer)
-        print("CORRECT ANSWER: ", correct_answer) 
-        print("")   
+        # print("QUESTION:       ", question)
+        # print("PREDICTION:     ", predicted_answer)
+        # print("CORRECT ANSWER: ", correct_answer) 
+        # print("")   
     accuracy = (float(counter) / len(data)) * 100
     return accuracy
 
