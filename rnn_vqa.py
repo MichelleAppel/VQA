@@ -11,10 +11,10 @@ from data_reader import read_textual_data, read_image_data
 from showme import show_image
 
 # define hyperparameters
-NUM_EPOCHS = 5
+NUM_EPOCHS = 3
 LEARNING_RATE = 0.01
 RNDM_SEED = 42
-N_HIDDEN = 300
+N_HIDDEN = 2000
 MIN_SEN_LEN = 2
 MAX_SEN_LEN = 20
 torch.manual_seed(RNDM_SEED) # set random seed for continuity
@@ -30,9 +30,9 @@ q_train, q_valid, q_test, a_train, a_valid, a_test = read_textual_data()
 # read in visual feature data
 img_ids, img_features, visual_feat_mapping, imgid2info = read_image_data()
 
-TRAIN_LEN = 500 #len(q_train)
-VALID_LEN = 10 #len(q_valid)
-TEST_LEN =  50 #len(q_test)
+TRAIN_LEN = int(0.15 * len(q_train))
+VALID_LEN = int(0.15 * len(q_valid))
+TEST_LEN =  int(0.15 * len(q_test))
 
 def sentence_length_index_count():
     sentence_length_index = [0] * 22
@@ -99,7 +99,7 @@ def vocabulary():
     return source_vocabulary, target_vocabulary, target_vocabulary_lookup
 
 train_data, train_visual_features, valid_data, valid_visual_features, test_data, test_visual_features = train_valid_test_data()
-train_data, train_visual_features = shuffle_data(train_data, train_visual_features)
+# train_data, train_visual_features = shuffle_data(train_data, train_visual_features)
 
 source_vocabulary, target_vocabulary, target_vocabulary_lookup = vocabulary()
 # print("Source vocabulary:", source_vocabulary)
@@ -216,8 +216,8 @@ def train_rnn():
             output, loss = train(target_tensor, question_tensor)
             current_loss += loss
             
-            if counter % 10 == 0:
-                print(counter, "/", len(train_data))
+            if counter % 100 == 0:
+                print(counter, "/", len(train_data), ' | ', current_loss / counter)
             counter += 1
 
             #print("LOSSSSSSSSS", loss.data[0])
