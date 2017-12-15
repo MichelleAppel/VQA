@@ -14,9 +14,7 @@ from showme import show_image
 NUM_EPOCHS = 3
 LEARNING_RATE = 0.01
 RNDM_SEED = 42
-N_HIDDEN = 2000
-MIN_SEN_LEN = 2
-MAX_SEN_LEN = 20
+N_HIDDEN = 3000
 torch.manual_seed(RNDM_SEED) # set random seed for continuity
 
 # map img_id to list of visual features corresponding to that image
@@ -51,27 +49,24 @@ def train_valid_test_data():
     train_visual_features = []
     for i in range(TRAIN_LEN): # number of instances of train data (10.000 with 3 epochs took 2 hours on my laptop)
         sentence = q_train[i][0].split()
-        if len(sentence) > MIN_SEN_LEN and len(sentence) < MAX_SEN_LEN:
-            train_data.append((sentence, a_train[i]))
-            train_visual_features.append(img_id_to_features(q_train[i][1]))
+        train_data.append((sentence, a_train[i]))
+        train_visual_features.append(img_id_to_features(q_train[i][1]))
 
     # determine validation data
     valid_data = []
     valid_visual_features = []
     for i in range(VALID_LEN): # number of instances of test data
         sentence = q_valid[i][0].split()
-        if len(sentence) > MIN_SEN_LEN and len(sentence) < MAX_SEN_LEN:
-            valid_data.append((sentence, a_valid[i]))
-            valid_visual_features.append(img_id_to_features(q_valid[i][1]))
+        valid_data.append((sentence, a_valid[i]))
+        valid_visual_features.append(img_id_to_features(q_valid[i][1]))
 
     # determine test data
     test_data = []
     test_visual_features = []
     for i in range(TEST_LEN): # number of instances of test data
         sentence = q_test[i][0].split()
-        if len(sentence) > MIN_SEN_LEN and len(sentence) < MAX_SEN_LEN:
-            test_data.append((sentence, a_test[i]))
-            test_visual_features.append(img_id_to_features(q_test[i][1]))
+        test_data.append((sentence, a_test[i]))
+        test_visual_features.append(img_id_to_features(q_test[i][1]))
 
     return train_data, train_visual_features, valid_data, valid_visual_features, test_data, test_visual_features
 
