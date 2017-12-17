@@ -12,9 +12,7 @@ from showme import show_image
 
 # define hyperparameters
 NUM_EPOCHS = 5
-# LEARNING_RATE = 0.1     # NILS      0.1
-#LEARNING_RATE = 0.01    # MICHELLE  0.01
-LEARNING_RATE = 0.001   # YVES      0.001
+LEARNING_RATE = 0.001
 RNDM_SEED = 42
 torch.manual_seed(RNDM_SEED) # set random seed for continuity
 
@@ -73,7 +71,6 @@ def shuffle_data(text_features, visual_features):
     return [text for (text, _) in combined], [visual for (_, visual) in combined]
 
 
-
 # create source_vocabulary and target_vocabulary
 # source_vocabulary maps each word in the vocab to a unique integer, 
 # which will be its index into the Bag of Words vector
@@ -91,7 +88,7 @@ def vocabulary():
     return source_vocabulary, target_vocabulary, target_vocabulary_lookup
             
 train_data, train_visual, valid_data, valid_visual, test_data, test_visual = train_valid_test_data()
-train_data, train_visual = shuffle_data(train_data, train_visual)
+#train_data, train_visual = shuffle_data(train_data, train_visual)
 source_vocabulary, target_vocabulary, target_vocabulary_lookup = vocabulary()
 
 
@@ -209,15 +206,10 @@ def calc_accuracy(model, data, visual_features): # data = validation_data or tes
         value, index = torch.max(log_probs, 1)
         index = index.data[0]
         predicted_answer = target_vocabulary_lookup[index]
-        #_, label = data[index]
          
         if predicted_answer == correct_answer:
             counter += 1
-            #print("QUESTION:       ", question)
-            #print("PREDICTION:     ", predicted_answer)
-            #print("CORRECT ANSWER: ", correct_answer) 
-            #print()
-        
+            
     accuracy = (float(counter) / len(data)) * 100
     return accuracy
 
