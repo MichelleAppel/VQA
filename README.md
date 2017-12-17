@@ -1,7 +1,7 @@
 # Natural Language Processing 1 - Visual Question Answering
 
 ## Abstract
-The main goal of this research is to implement a system that is capable of answering questions related to pictures, which is known as Visual Question Answering (VQA). Two methods are proposed: a Bag of Words (BoW) model and a Recurrent Neural Network (RNN) that uses an ordered list of BoW vectors. Both word representations are concatenated with a list of image features. Both methods are trained using a data set retrieved from CloudCV. In our experiments, the BoW model outperforms the RNN.
+The main goal of this research is to implement a system that is capable of answering questions related to pictures, which is known as Visual Question Answering (VQA). Two methods are proposed: a Bag of Words + image features (BOWIMG) model and a Recurrent Neural Network (RNN) that uses an ordered list of BoW vectors which are concatenated with a list of image features. Both methods are trained using a data set retrieved from CloudCV. In our experiments, the BoW model outperforms the RNN.
 
 ## Project Description
 This project combines Natural Language Processing with Computer Vision for high-level scene interpretation. In particular, this code provides a system that is capable to answer to questions related to pictures. The first model is a Bag-of-Words + image features (BOWIMG) model, the second a Recurrent Neural Network (RNN).
