@@ -6,7 +6,8 @@ The main goal of this research is to implement a system that is capable of answe
 ## Project Description
 This project combines Natural Language Processing with Computer Vision for high-level scene interpretation. In particular, this code provides a system that is capable to answer to questions related to pictures. The first model is a Bag-of-Words (BoW) model, the second a Recurrent Neural Network (RNN).
 
-An example is given by:
+An example is given by: 
+
 ![whut](https://i.imgur.com/XXlkUCm.png)
 
 ## Data
