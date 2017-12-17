@@ -1,4 +1,3 @@
-#http://pytorch.org/tutorials/intermediate/char_rnn_classification_tutorial.html
 import random
 import torch
 import torch.autograd as autograd
@@ -14,7 +13,7 @@ from showme import show_image
 NUM_EPOCHS = 3
 LEARNING_RATE = 0.01
 RNDM_SEED = 42
-N_HIDDEN = 3000
+N_HIDDEN = 1000
 torch.manual_seed(RNDM_SEED) # set random seed for continuity
 
 # map img_id to list of visual features corresponding to that image
@@ -35,11 +34,9 @@ TEST_LEN =  int(0.15 * len(q_test))
 def sentence_length_index_count():
     sentence_length_index = [0] * 22
     target_length_index = [0] * 3
-
     for (sentence, target) in train_data+valid_data+test_data:
         sentence_length_index[len(sentence)] += 1
         target_length_index[len([target])] += 1
-
     print("Sentences ", sentence_length_index)
     print("Targets   ", target_length_index)
 
@@ -94,21 +91,14 @@ def vocabulary():
     return source_vocabulary, target_vocabulary, target_vocabulary_lookup
 
 train_data, train_visual_features, valid_data, valid_visual_features, test_data, test_visual_features = train_valid_test_data()
-# train_data, train_visual_features = shuffle_data(train_data, train_visual_features)
-
 source_vocabulary, target_vocabulary, target_vocabulary_lookup = vocabulary()
-# print("Source vocabulary:", source_vocabulary)
-# print("Target vocabulary:",target_vocabulary)
 
 # calculate size of both vocabularies
 VOCAB_SIZE = len(source_vocabulary) # amount of unique words in questions
 NUM_LABELS = len(target_vocabulary) # amount of unique words in answers
 IMG_FEAT_SIZE = len(train_visual_features[0])
-
-print(VOCAB_SIZE)
-
-#print('Source vocabulary size:', VOCAB_SIZE, '  ', len(source_vocabulary))
-#print('Target vocabulary size:', NUM_LABELS, '    ', len(target_vocabulary))
+print('Source vocabulary size:', VOCAB_SIZE, '  ', len(source_vocabulary))
+print('Target vocabulary size:', NUM_LABELS, '    ', len(target_vocabulary))
 
 def get_training_pair(sentence, label, source_vocabulary, target_vocabulary, visual_features):
     return Variable(make_input_tensor(sentence, source_vocabulary, visual_features)), \
@@ -125,12 +115,10 @@ def make_input_tensor(sentence, source_vocabulary, visual_features):
 def make_target_tensor(label, target_vocabulary):
     return torch.LongTensor([target_vocabulary[label]])
 
+
 ###########################################################
 ###################### RNN MODEL ##########################
 ###########################################################
-
-#TODO   TEST WHETHER THIS IS EASIER TO IMPLEMENT:
-#       rnn = torch.nn.LSTM(input_size=4, hidden_size=3, batch_first=True)
 
 # define a class for the RNN model
 class RNN(nn.Module):
@@ -157,7 +145,6 @@ class RNN(nn.Module):
 
 # initialize a RNN model
 rnn = RNN(VOCAB_SIZE + IMG_FEAT_SIZE, N_HIDDEN, NUM_LABELS)
-#print(rnn)
 
 # intialize loss function (= Negative Log Likelihood Loss)
 loss_function = nn.NLLLoss()
@@ -165,21 +152,7 @@ loss_function = nn.NLLLoss()
 # intialize optimizer (= Stochastic Gradient Descent)
 optimizer = optim.SGD(rnn.parameters(), lr=LEARNING_RATE)
 
-#rnn = nn.RNN(input_size=VOCAB_SIZE,
-#    hidden_size = N_HIDDEN,
-#    num_layers = 1,
-#    nonlinearity = 'tanh')
-'''
-input_size      –   The number of expected features in the input x
-hidden_size     –   The number of features in the hidden state h
-num_layers      –   Number of recurrent layers.
-nonlinearity    –   The non-linearity to use [‘tanh’|’relu’]. Default: ‘tanh’
-bias            –   If False, then the layer does not use bias weights b_ih and b_hh. Default: True
-batch_first     –   If True, then the input and output tensors are provided as (batch, seq, feature)
-dropout         –   If non-zero, introduces a dropout layer on the outputs of each RNN layer except the last layer
-bidirectional   –   If True, becomes a bidirectional RNN. Default: False
-'''
-
+# 
 def train(answer_tensor, question_tensor):
     rnn.zero_grad()
     hidden = rnn.init_hidden()
@@ -194,7 +167,7 @@ def train(answer_tensor, question_tensor):
 
     return output, loss.data[0]
 
-#TODO improve this method
+# train the model on train_data for NUM_EPOCHS epochs
 def train_rnn():
     
     # keep track of losses for plotting
@@ -215,24 +188,14 @@ def train_rnn():
                 print(counter, "/", len(train_data), ' | ', current_loss / counter)
             counter += 1
 
-            #print("LOSSSSSSSSS", loss.data[0])
-            #print(output)
-            #print(question)
-            #print(answer)
-            #print("\n\n\n\n\n\n")
-
-            # Add parameters' gradients to their values, multiplied by learning rate
-            # for p in rnn.parameters():
-            #     p.data.add_(-LEARNING_RATE, p.grad.data)
-                
         # add current loss avg to list of losses
         all_losses.append(current_loss)
         value, index = torch.max(output, 1)
-        print("CURRENT LOSS", current_loss)
-        print("VALIDATION ACCURACY", calc_accuracy(rnn, valid_data, valid_visual_features))
+        print("Average loss", current_loss)
+        print("validation accuracy", calc_accuracy(rnn, valid_data, valid_visual_features))
         current_loss = 0
             
-    return rnn, output, loss
+    return rnn, all_losses
 
 
 
@@ -241,54 +204,27 @@ def calc_accuracy(model, data, visual_features):
     for (question, correct_answer), vis_features in zip(data, visual_features):
         input_tensor = Variable(make_input_tensor(question, source_vocabulary, vis_features))
         hidden = model.init_hidden()
-        #hidden = Variable(torch.zeros(1, N_HIDDEN))
+
         for i in range(input_tensor.size()[0]):
             output, hidden = model(input_tensor[i], hidden)
-        # print("OUTPUT", output)
-        # print("OUTPUTDATA", output.data)
+       
         value, index = torch.max(output, 1)
         index = index.data[0]
         predicted_answer = target_vocabulary_lookup[index]
-        #_, label = data[index]
+
         if predicted_answer == correct_answer:
             counter += 1
-        # print("QUESTION:       ", question)
-        # print("PREDICTION:     ", predicted_answer)
-        # print("CORRECT ANSWER: ", correct_answer) 
-        # print("")   
+   
     accuracy = (float(counter) / len(data)) * 100
     return accuracy
 
 
 
 if __name__ == "__main__":
-    '''
-    question, correct_answer = train_data[0]
-    print("question:", question)
-    print("question:", type(question))
-    print()
-    print("correct_answer:  ", correct_answer)
-    print("correct_answer:", type(correct_answer))
-    print()
+    trained_rnn, all_losses = train_rnn()
     
-    vis_features = train_visual_features[0]
-    input_tensor = autograd.Variable(make_input_tensor(question, source_vocabulary))
-    print("input_tensor:", input_tensor)
-    print("input_tensor:", type(input_tensor))
-    print()
+    print("Trained RNN model:\n", trained_rnn)
+    print("Average loss of each epoch:\n", all_losses)
     
-    target = autograd.Variable(make_target_tensor(correct_answer, target_vocabulary))
-    print("target:", type(target))
-    print("target:", type(target))
-    print()
-    '''
-    rnn, output, loss = train_rnn()
-    print(calc_accuracy(rnn, test_data, test_visual_features))
-    
-    
-
-# idt = img_ids[15]
-# idh = feat_mapping[str(idt)]
-
-# show_image(img_info, idt)
-# print(img_feat[idh])
+    accuracy = calc_accuracy(rnn, test_data, test_visual_features)
+    print("The accuracy of RNN on test data is: ", accuracy, "%")

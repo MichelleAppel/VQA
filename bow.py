@@ -1,5 +1,3 @@
-#http://pytorch.org/tutorials/beginner/nlp/deep_learning_tutorial.html
-
 import torch
 import torch.autograd as autograd
 import torch.nn as nn
@@ -27,9 +25,9 @@ q_train, q_valid, q_test, a_train, a_valid, a_test = read_textual_data()
 # read in visual feature data
 img_ids, img_features, visual_feat_mapping, imgid2info = read_image_data()
 
-TRAIN_LEN = len(q_train)
-VALID_LEN = len(q_valid)
-TEST_LEN =  len(q_test)
+TRAIN_LEN = int(0.1 * len(q_train))
+VALID_LEN = int(0.1 * len(q_valid))
+TEST_LEN =  int(0.1 * len(q_test))
 
 def sentence_length_index_count():
     sentence_length_index = [0] * 22
@@ -88,21 +86,14 @@ def vocabulary():
     return source_vocabulary, target_vocabulary, target_vocabulary_lookup
             
 train_data, train_visual, valid_data, valid_visual, test_data, test_visual = train_valid_test_data()
-#train_data, train_visual = shuffle_data(train_data, train_visual)
 source_vocabulary, target_vocabulary, target_vocabulary_lookup = vocabulary()
 
-
 # calculate size of both vocabularies
-# size of source vocab should be incremented by size of visual features since these will be added later
-VOCAB_SIZE = len(source_vocabulary)+len(train_visual[0])
-# amount of unique words in questions + amount of visual features
-NUM_LABELS = len(target_vocabulary)
-# amount of unique words in answers 
-print('Source vocabulary size:', VOCAB_SIZE, '  ',
-    len(source_vocabulary), 'from source_vocab and', len(train_visual[0]), 'from visual features')
-print('Target vocabulary size:', NUM_LABELS, '    ',
-    len(target_vocabulary), 'from target_vocab')
-
+VOCAB_SIZE = len(source_vocabulary) # amount of unique words in questions
+NUM_LABELS = len(target_vocabulary) # amount of unique words in answers
+IMG_FEAT_SIZE = len(train_visual_features[0])
+print('Source vocabulary size:', VOCAB_SIZE, '  ', len(source_vocabulary))
+print('Target vocabulary size:', NUM_LABELS, '    ', len(target_vocabulary))
 
 ###########################################################
 ###################### BOW MODEL ##########################
@@ -147,7 +138,6 @@ loss_function = nn.NLLLoss()
 # intialize optimizer (= Stochastic Gradient Descent)
 optimizer = optim.SGD(bow_model.parameters(), lr=LEARNING_RATE)
 
-#TODO improve training by including k-fold cross validation?
 # train the model on train_data for NUM_EPOCHS epochs
 def train_bow():
     
@@ -196,7 +186,6 @@ def train_bow():
     return bow_model, all_losses
 
 
-#TODO take the highest X probabilities to get the best X predictions (instead of 1)
 # calculates the accuracy of predictions in given dataset
 def calc_accuracy(model, data, visual_features): # data = validation_data or test_data
     counter = 0
@@ -215,9 +204,11 @@ def calc_accuracy(model, data, visual_features): # data = validation_data or tes
 
 
 if __name__ == "__main__":
-    bow_model, all_losses = train_bow()
-    print("bow_model\n", bow_model)
-    print("all_losses\n", all_losses)
+    trained_bow, all_losses = train_bow()
+    
+    print("Trained BoW model:\n", trained_bow)
+    print("Average loss of each epoch:\n", all_losses)
+    
     accuracy = calc_accuracy(bow_model, test_data, test_visual)
-    print("The accuracy on the test data is: ", accuracy, "%")
+    print("The accuracy of BoW on test data is: ", accuracy, "%")
     
